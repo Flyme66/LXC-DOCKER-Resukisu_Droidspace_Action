@@ -1,10 +1,15 @@
-# Re:Kernel 内核内嵌形态补丁（4.9 先行）
+# Re:Kernel 内核内嵌形态补丁（4.9 / 4.14）
 
 来源：Sakion-Team/Re-Kernel（GPL-2.0，`Integrate/` 素材）；本地工作区快照
 `localworkspace/mirrors/Re-Kernel/`（v11.6）。≤5.4 非 GKI 走内核内嵌形态；
 ≥5.10 上游走 ko/Magisk 模块，不在本仓库。
 
-## 组成（4.9/）
+## 组成（4.9/、4.14/）
+
+4.9 与 4.14 各三件；`0001` 两版同一份（新增文件与目标树无关），
+`0002`/`0003` 的锚点按各树上下文落位（差异见各自 README）。
+
+### 4.9/
 
 | 补丁 | 内容 |
 |---|---|
@@ -36,5 +41,8 @@
 ## 状态
 
 - 4.9（polaris）：三件补丁对 `lineage-22.2` tip 洁净树真实 `git apply` 顺序
-  通过；编译面与运行面待 CI 构建与刷机验证。
-- 4.14（RMX2117）、4.19（alioth）：锚点判定可行，port 未生成。
+  通过；已接入 `build-polaris.yml`（`enable_rekernel`，默认 off）；编译面与
+  运行面待 CI 构建与刷机验证。
+- 4.14（RMX2117）：三件补丁对 `f0c2afc4d` 洁净树顺序 `git apply` 通过；
+  接线面待 4.9 的 CI 结果后补齐。
+- 4.19（alioth）：锚点判定可行，port 待生成。
