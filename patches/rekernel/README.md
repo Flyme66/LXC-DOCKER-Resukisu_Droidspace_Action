@@ -20,9 +20,10 @@
 - `rekernel.h`：上游直接读 `JOBCTL_TRAP_FREEZE`；pre-freezer-v2 树（4.9/4.14）
   无此位，改为 `#ifdef` 回退，冻结判定由 `frozen_task_group()` 的
   `cgroup_freezing()` 承担（4.19 有该位，可用上游原文）。
-- `binder.c`：上游另插入 `TF_UPDATE_TXN` 的 async 事务合并块；本仓库三棵目标树
-  （4.9/4.14/4.19）均未定义 `TF_UPDATE_TXN`，本 port 只保留上报块，判定与
-  证据见 `localworkspace/pipelines/rekernel/FEASIBILITY.md`。
+- `binder.c`：上游另插入 `TF_UPDATE_TXN`（`0x40`）的 async 事务合并块；三棵目标树
+  都未命名该位，其中 MTK 4.14 的 `0x40` 是厂商 `TF_ASYNC_BOOST`，照搬本地定义会
+  撞位，故本 port 只保留上报块。判定与证据见
+  `localworkspace/pipelines/rekernel/FEASIBILITY.md`。
 
 ## 接线（build-polaris.yml）
 
