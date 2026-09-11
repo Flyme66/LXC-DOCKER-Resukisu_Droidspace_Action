@@ -218,6 +218,18 @@ if [ "${ENABLE_DROIDSPACE:-true}" = "true" ]; then
   fi
 fi
 
+if [ "${ENABLE_REKERNEL:-false}" = "true" ]; then
+  # Reporting face only: the netlink/network reporting variant stays off
+  # (upstream default for these trees).
+  assert_cfg CONFIG_REKERNEL || rc=1
+  if grep -qE "^CONFIG_REKERNEL_NETWORK=y$" "$CFG"; then
+    echo "   FAIL CONFIG_REKERNEL_NETWORK (should be off)" >&2
+    rc=1
+  else
+    echo "   OK   CONFIG_REKERNEL_NETWORK is not set"
+  fi
+fi
+
 if [ "${ENABLE_DATA_ISOLATION:-true}" = "true" ]; then
   # The isolation semantics are enforced by the sdcardfs source patch
   # (patches/sdcardfs), so only the filesystem itself must be present.

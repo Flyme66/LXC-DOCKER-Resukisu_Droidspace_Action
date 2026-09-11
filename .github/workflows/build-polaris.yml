@@ -41,6 +41,10 @@ on:
         description: sdcardfs per-uid Android/data isolation
         type: boolean
         default: false
+      enable_rekernel:
+        description: integrate Re:Kernel (frozen-process binder/signal reporting)
+        type: boolean
+        default: false
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
@@ -67,6 +71,7 @@ jobs:
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation }}
+      ENABLE_REKERNEL: ${{ inputs.enable_rekernel }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
       - name: Checkout action repo
@@ -274,6 +279,29 @@ jobs:
           bash scripts/apply-patches.sh "$KROOT" \
             "$GITHUB_WORKSPACE/patches/sdcardfs"
 
+      - name: Integrate Re:Kernel (enable_rekernel)
+        if: env.ENABLE_REKERNEL == 'true'
+        run: |
+          cd "$KROOT"
+          # 4.9 tree-adapted port of the upstream kernel-embedded form:
+          # drivers/rekernel/ plus the binder and signal report hooks. The
+          # Kconfig/Makefile wiring lives here because the integration
+          # steps above rewrite those two files.
+          for p in 0001-drivers-rekernel-netlink-server \
+                   0002-binder-frozen-transaction-notify \
+                   0003-signal-frozen-kill-notify; do
+            P="$GITHUB_WORKSPACE/patches/rekernel/4.9/$p.patch"
+            git apply --check "$P" || { echo "$p does not apply cleanly"; exit 1; }
+            git apply "$P"
+          done
+          grep -q 'drivers/rekernel/Kconfig' drivers/Kconfig || \
+            sed -i '/endmenu/i\source "drivers/rekernel/Kconfig"' drivers/Kconfig
+          grep -q 'obj-$(CONFIG_REKERNEL) += rekernel/' drivers/Makefile || \
+            printf 'obj-$(CONFIG_REKERNEL) += rekernel/\n' >> drivers/Makefile
+          printf 'CONFIG_REKERNEL=y\n# CONFIG_REKERNEL_NETWORK is not set\n' \
+            > "$GITHUB_WORKSPACE/rekernel.config.fragment"
+          ls drivers/rekernel
+
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
       # the git describe commit id (4.9 uses CONFIG_LOCALVERSION_AUTO).
@@ -300,10 +328,12 @@ jobs:
           fi
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
+          [ "$ENABLE_REKERNEL" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/rekernel.config.fragment"
           ROOT_MANAGER="$ROOT_MANAGER" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
           ENABLE_DATA_ISOLATION="$ENABLE_DATA_ISOLATION" \
+          ENABLE_REKERNEL="$ENABLE_REKERNEL" \
           HOOK_EXTRA="$HOOK_EXTRA" \
           HOOK_TYPE="$HOOK_TYPE" \
           bash scripts/merge-defconfig.sh "$KROOT" "$RUNNER_TEMP/out" $FRAGS

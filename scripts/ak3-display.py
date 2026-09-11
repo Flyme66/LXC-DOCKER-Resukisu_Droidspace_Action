@@ -10,7 +10,7 @@ env: ROOT_MANAGER
 Display: two centered lines —
     <codename>  <manager>
     <feature>  <feature> ...
-features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
+features follow BBG > DROIDSPACE > SDCARDFS > REKERNEL; absent ones are
 omitted. Package name: <codename>_<manager>[_<feature>...].zip
 
 Writes inside <ak3-dir>:
@@ -50,6 +50,7 @@ feat_flags = [
     ('BBG', os.environ.get('ENABLE_BBG') == 'true'),
     ('DROIDSPACE', os.environ.get('ENABLE_DROIDSPACE') == 'true'),
     ('SDCARDFS', os.environ.get('ENABLE_DATA_ISOLATION') == 'true'),
+    ('REKERNEL', os.environ.get('ENABLE_REKERNEL') == 'true'),
 ]
 feats = [name for name, on in feat_flags if on]
 
