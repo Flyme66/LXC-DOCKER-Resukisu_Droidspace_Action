@@ -1,0 +1,42 @@
+diff --git a/drivers/android/binder.c b/drivers/android/binder.c
+index 1eb251a..6a4590e 100644
+--- a/drivers/android/binder.c
++++ b/drivers/android/binder.c
+@@ -73,6 +73,9 @@
+ #include <linux/spinlock.h>
+ #include <linux/ratelimit.h>
+ 
++#ifdef CONFIG_REKERNEL
++#include "../rekernel/rekernel.h"
++#endif /* CONFIG_REKERNEL */
+ #include <uapi/linux/android/binder.h>
+ #include <uapi/linux/android/binderfs.h>
+ #include <uapi/linux/sched/types.h>
+@@ -3157,6 +3160,27 @@ static void binder_transaction(struct binder_proc *proc,
+ 		target_proc = target_thread->proc;
+ 		target_proc->tmp_ref++;
+ 		binder_inner_proc_unlock(target_thread->proc);
++#ifdef CONFIG_REKERNEL
++		if (target_proc && target_proc->tsk) {
++			if (reply)
++				binder_reply_handler(proc->pid, proc->tsk,
++						     target_proc->pid,
++						     target_proc->tsk, 0, tr);
++			else {
++				binder_trans_handler(proc->pid, proc->tsk,
++						     target_proc->pid,
++						     target_proc->tsk,
++						     tr->flags & TF_ONE_WAY, tr);
++				if ((tr->flags & TF_ONE_WAY) &&
++				    target_proc->alloc.free_async_space <
++					(target_proc->alloc.buffer_size / 10 + 0x300))
++					binder_overflow_handler(proc->pid, proc->tsk,
++								target_proc->pid,
++								target_proc->tsk,
++								true, tr);
++			}
++		}
++#endif /* CONFIG_REKERNEL */
+ 	} else {
+ 		if (tr->target.handle) {
+ 			struct binder_ref *ref;

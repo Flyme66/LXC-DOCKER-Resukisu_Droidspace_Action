@@ -1,0 +1,26 @@
+diff --git a/kernel/signal.c b/kernel/signal.c
+index dc727af..92a5c20 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -55,6 +55,9 @@
+ #include <asm/unistd.h>
+ #include <asm/siginfo.h>
+ #include <asm/cacheflush.h>
++#ifdef CONFIG_REKERNEL
++#include <../drivers/rekernel/rekernel.h>
++#endif /* CONFIG_REKERNEL */
+ #include "audit.h"	/* audit_signal_info() */
+ 
+ /*
+@@ -1270,6 +1273,11 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
+ 	unsigned long flags;
+ 	int ret = -ESRCH;
+ 
++#ifdef CONFIG_REKERNEL
++	if (p && (sig == SIGKILL || sig == SIGTERM || sig == SIGABRT || sig == SIGQUIT))
++		rekernel_report(SIGNAL, sig, current->pid, current,
++				task_pid_nr(p), p, 0, NULL);
++#endif /* CONFIG_REKERNEL */
+ 	if (lock_task_sighand(p, &flags)) {
+ 		ret = send_signal(sig, info, p, type);
+ 		unlock_task_sighand(p, &flags);
