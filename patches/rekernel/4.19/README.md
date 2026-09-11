@@ -23,9 +23,12 @@ Re:Kernel；上游素材与 4.9/4.14 同源（`Sakion-Team/Re-Kernel` v11.6，�
 
 ## 状态
 
-- 对 `71b13e6`（`lineage-23.2` tip）洁净树三件顺序 `git apply` 通过；引用符号
-  均在树内：`struct binder_proc.tsk`、`alloc.free_async_space` /
-  `alloc.buffer_size`、`cgroup_freezing`、`JOBCTL_TRAP_FREEZE`、`TF_ONE_WAY`。
-- 接线面：`build-alioth.yml` 尚无 `enable_rekernel` 步骤——mix2s 先行，编译面
-  待 4.9 的 CI 结果再辐射到本版本。
 - 目标树来源：`localworkspace/kernels/partial/alioth-4.19/`（sparse，`lineage-23.2` tip）。
+- 补丁面：对 `71b13e6` 洁净树三件顺序 `git apply` 通过；引用符号均在树内：
+  `struct binder_proc.tsk`、`alloc.free_async_space` / `alloc.buffer_size`、
+  `cgroup_freezing`、`JOBCTL_TRAP_FREEZE`、`TF_ONE_WAY`。
+- 接线面：`build-alioth.yml` 的 `Integrate Re:Kernel (enable_rekernel)` 步骤
+  （默认 off）取本目录三件；该步骤在 `localworkspace/kernels/partial/alioth-4.19`
+  的 worktree 上真实执行，`drivers/rekernel/` 四件落位、`drivers/Kconfig` 与
+  `drivers/Makefile` 各注入一行、fragment 两行产物、binder 与 signal 上报钩子各一处。
+- 编译面待 CI 构建；运行面（netlink unit 对接、上报路径）待刷机实测。

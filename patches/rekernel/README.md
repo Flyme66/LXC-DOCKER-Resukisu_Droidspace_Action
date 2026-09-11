@@ -31,20 +31,23 @@
   撞位，故本 port 只保留上报块。判定与证据见
   `localworkspace/pipelines/rekernel/FEASIBILITY.md`。
 
-## 接线（build-polaris.yml）
+## 接线（workflow）
 
-`enable_rekernel`（默认 off）：apply 0001–0003 + `drivers/Kconfig`、
-`drivers/Makefile` 注入 + `rekernel.config.fragment`（`CONFIG_REKERNEL=y`、
-`# CONFIG_REKERNEL_NETWORK is not set`）；`merge-defconfig.sh` 断言
-`CONFIG_REKERNEL` 且 `CONFIG_REKERNEL_NETWORK` 未开。AK3 显示面在
-`ENABLE_REKERNEL=true` 时于特性行加入 `REKERNEL`。
+三版各接一条 `enable_rekernel`（默认 off）步骤：polaris 取 4.9、RMX2117 取 4.14、
+alioth 取 4.19。步骤 apply 三件补丁 + `drivers/Kconfig`、`drivers/Makefile` 注入 +
+`rekernel.config.fragment`（`CONFIG_REKERNEL=y`、`# CONFIG_REKERNEL_NETWORK is not set`）；
+`merge-defconfig.sh` 断言 `CONFIG_REKERNEL` 且 `CONFIG_REKERNEL_NETWORK` 未开。
+AK3 显示面在 `ENABLE_REKERNEL=true` 时于特性行加入 `REKERNEL`。
 
 ## 状态
 
-- 4.9（polaris）：三件补丁对 `lineage-22.2` tip 洁净树真实 `git apply` 顺序
-  通过；已接入 `build-polaris.yml`（`enable_rekernel`，默认 off）；编译面与
-  运行面待 CI 构建与刷机验证。
-- 4.14（RMX2117）：三件补丁对 `f0c2afc4d` 洁净树顺序 `git apply` 通过；
-  接线面待 4.9 的 CI 结果后补齐。
-- 4.19（alioth）：三件补丁对 `71b13e6`（`lineage-23.2` tip）洁净树顺序
-  `git apply` 通过；接线面待 4.9 的 CI 结果后补齐。
+- 4.9（polaris）：三件补丁对 `lineage-22.2` tip 洁净树真实 `git apply` 顺序通过，
+  已接入 `build-polaris.yml`。
+- 4.14（RMX2117）：三件补丁对 `f0c2afc4d` 洁净树真实 `git apply` 顺序通过，
+  已接入 `build-RMX2117.yml`。
+- 4.19（alioth）：三件补丁对 `71b13e6`（`lineage-23.2` tip）洁净树真实 `git apply`
+  顺序通过，已接入 `build-alioth.yml`。
+- 三版的接线步骤均在其目标树 worktree 上真实执行：`drivers/rekernel/` 四件落位、
+  `drivers/Kconfig` 与 `drivers/Makefile` 各注入一行、fragment 为
+  `CONFIG_REKERNEL=y` + `# CONFIG_REKERNEL_NETWORK is not set`、binder 与 signal
+  上报钩子各一处。编译面待 CI 构建，运行面（netlink unit 对接、上报路径）待刷机实测。

@@ -22,9 +22,12 @@
 
 ## 状态
 
-- 对 `f0c2afc4d` 洁净树（`mirrors/q2-kernel-4.14`）三件顺序 `git apply` 通过；
-  引用符号均在树内：`struct binder_proc.tsk`、`alloc.free_async_space` /
+- 补丁面：对 `f0c2afc4d` 洁净树（`mirrors/q2-kernel-4.14`）三件顺序 `git apply`
+  通过；引用符号均在树内：`struct binder_proc.tsk`、`alloc.free_async_space` /
   `alloc.buffer_size`、`cgroup_freezing`，`task_tgid_nr` 经
   `net/sock.h → linux/sched.h` 可达。
-- 接线面：`build-RMX2117.yml` 尚无 `enable_rekernel` 步骤——mix2s 先行，编译面
-  待 4.9 的 CI 结果再辐射到本版本。
+- 接线面：`build-RMX2117.yml` 的 `Integrate Re:Kernel (enable_rekernel)` 步骤
+  （默认 off）取本目录三件；该步骤在 `mirrors/q2-kernel-4.14` 的 worktree 上真实
+  执行，`drivers/rekernel/` 四件落位、`drivers/Kconfig` 与 `drivers/Makefile`
+  各注入一行、fragment 两行产物、binder 与 signal 上报钩子各一处。
+- 编译面待 CI 构建；运行面（netlink unit 对接、上报路径）待刷机实测。

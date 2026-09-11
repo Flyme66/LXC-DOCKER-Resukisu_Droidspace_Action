@@ -34,6 +34,10 @@ on:
         description: enable Droidspaces/LXC kernel support (4.14 cgroup prefix patch + config)
         type: boolean
         default: false
+      enable_rekernel:
+        description: integrate Re:Kernel (frozen-process binder/signal reporting)
+        type: boolean
+        default: false
       auto_fix_49:
         description: "4.x auto-hook kasan_reset_tag guard fix (resukisu-auto)"
         type: boolean
@@ -55,6 +59,7 @@ jobs:
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
+      ENABLE_REKERNEL: ${{ inputs.enable_rekernel }}
       KERNEL_REPO: https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source.git
       DEFCONFIG: k6853v1_64_6360_defconfig
     steps:
@@ -295,6 +300,33 @@ jobs:
             { echo "!! droidspace cgroup patch did not apply; continuing (non-fatal)"; }
           echo "Droidspace 4.14 patches done (config merged below)"
 
+      - name: Integrate Re:Kernel (enable_rekernel)
+        if: env.ENABLE_REKERNEL == 'true'
+        run: |
+          cd "$KROOT"
+          # 4.14 tree-adapted port of the upstream kernel-embedded form:
+          # drivers/rekernel/ plus the binder and signal report hooks. The
+          # Kconfig/Makefile wiring lives here because the integration
+          # steps above rewrite those two files.
+          for p in 0001-drivers-rekernel-netlink-server \
+                   0002-binder-frozen-transaction-notify \
+                   0003-signal-frozen-kill-notify; do
+            P="$GITHUB_WORKSPACE/patches/rekernel/4.14/$p.patch"
+            git apply --check "$P" || { echo "$p does not apply cleanly"; exit 1; }
+            git apply "$P"
+          done
+          grep -q 'drivers/rekernel/Kconfig' drivers/Kconfig || \
+            sed -i '/endmenu/i\source "drivers/rekernel/Kconfig"' drivers/Kconfig
+          grep -q 'obj-$(CONFIG_REKERNEL) += rekernel/' drivers/Makefile || \
+            printf 'obj-$(CONFIG_REKERNEL) += rekernel/\n' >> drivers/Makefile
+          printf 'CONFIG_REKERNEL=y\n# CONFIG_REKERNEL_NETWORK is not set\n' \
+            > "$GITHUB_WORKSPACE/rekernel.config.fragment"
+          ls drivers/rekernel
+
+      # Commit all applied patches so `make`'s setlocalversion sees a clean
+      # git tree -> kernel version loses the "-dirty" suffix while keeping
+      # the git describe commit id.
+
       - name: Commit patched kernel tree (drop -dirty from version)
         run: |
           cd "$KROOT"
@@ -345,6 +377,9 @@ jobs:
           if [ "$ENABLE_DROIDSPACE" = "true" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.14/droidspace.config"
           fi
+          if [ "$ENABLE_REKERNEL" = "true" ]; then
+            FRAGS="$FRAGS $GITHUB_WORKSPACE/rekernel.config.fragment"
+          fi
           # Shared defconfig assembler: alldefconfig from baseline +
           # fragments, then asserts the enabled feature symbol chains.
           # MTK project defconfig k6853v1_64_6360 is the baseline.
@@ -355,6 +390,7 @@ jobs:
           ROOT_MANAGER="$ROOT_MANAGER" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \
+          ENABLE_REKERNEL="$ENABLE_REKERNEL" \
           ENABLE_DATA_ISOLATION=false \
           HOOK_TYPE="$HOOK_TYPE" \
           HOOK_EXTRA="$HOOK_EXTRA" \

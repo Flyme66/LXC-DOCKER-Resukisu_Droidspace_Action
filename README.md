@@ -16,9 +16,9 @@ workflow_dispatch 手动触发。
 | realme Q2 5G（国行） | `RMX2117` (mt6853) | 4.14.186 | [realme X7 系 AndroidS 综合源](https://github.com/MOSSVENC/realme_X7_X7Pro_X7ProExtreme_X7-5G_Q2Pro_V15_V5_Q2_Narzo30pro-5G_7-5G-AndroidS-kernel-source)（9 机共用）@ `master` | `build-RMX2117.yml` |
 
 workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
-特性开关（`enable_bbg` / `enable_droidspace`，另按设备出现 `cgroup_port`
-/ `enable_data_isolation` / `auto_fix_49`）。所有开关均不预设启用，按
-构建需要手动选择。
+特性开关（`enable_bbg` / `enable_droidspace` / `enable_rekernel`，另按设备
+出现 `cgroup_port` / `enable_data_isolation` / `auto_fix_49`）。所有开关均不
+预设启用，按构建需要手动选择。
 
 ## root_mode（root 管理器与 hook 组合）
 
@@ -100,6 +100,7 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 | Droidspace | `enable_droidspace` | 容器/LXC 内核支持（各树 port 不同） |
 | Droidspace cgroup 补丁 | `cgroup_port` | 4.9 cgroup noprefix compat 补丁（仅 droidspace 时生效；仅 4.9 设备） |
 | Android/data 隔离 | `enable_data_isolation` | sdcardfs per-uid 隔离（仅 polaris） |
+| Re:Kernel | `enable_rekernel` | 内核内嵌形态（`patches/rekernel/{4.9,4.14,4.19}/`）：冻结进程的 binder 事务 / signal 上报与 netlink 上报面 |
 
 `auto_fix_49`：resukisu-auto 的 4.x kasan_reset_tag 门槛修正（auto-hook
 分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
@@ -123,7 +124,7 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 <BASE_DEFCONFIG>
   + <DEVICE_FRAGMENTS>
   + resukisu.config.fragment / xxksu.config.fragment / susfs.config.fragment（按 root_mode）
-  + bbg/droidspace fragment（按特性开关）
+  + bbg/droidspace/rekernel fragment（按特性开关）
   + 强制覆盖：CC_WERROR off、KALLSYMS(+ALL)=y
   → 断言（缺失即失败）
 ```
@@ -144,6 +145,7 @@ patches/
   resukisu/            4.9/4.14/4.19 树适配补丁
   susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
   bbg/                 集成说明（无本地补丁）
+  rekernel/            4.9/4.14/4.19 内核内嵌形态补丁
   sdcardfs/            Android/data 隔离（仅 polaris）
   alioth/              min-tool-version.sh（构建辅助）
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
