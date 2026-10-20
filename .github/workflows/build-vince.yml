@@ -1,12 +1,12 @@
 name: build-vince
 
 # Builds a Xiaomi Redmi 5 Plus (vince, msm8953) kernel from Flyme66's "13"
-# tree with selectable features (ReSukiSU manual hook / BBG / Droidspace)
+# tree with selectable features (BakaSU manual hook / BBG / Droidspace)
 # and packages it as an AnyKernel3 zip.
 # Mirrors build-polaris.yml; differences:
 #   - kernel source: Flyme66/kernel_xiaomi_OctaviOS_vince @ 13
 #   - baseline defconfig: vince-perf_defconfig (self-contained, no fragments)
-#   - tree ships a legacy KernelSU under drivers/kernelsu — removed before ReSukiSU
+#   - tree ships a legacy KernelSU under drivers/kernelsu — removed before BakaSU
 # Feature defaults mirror the workflow_dispatch input defaults below.
 
 on:
@@ -107,9 +107,9 @@ jobs:
       # old ksu_handle_* hook blocks inside fs/exec.c fs/open.c fs/stat.c
       # fs/read_write.c drivers/input/input.c.
       #
-      # ReSukiSU replaces all of it: revert the source hook commit, then
+      # BakaSU replaces all of it: revert the source hook commit, then
       # strip the importer/wiring so the tree is clean for our apply-patches
-      # + ReSukiSU setup.sh pipeline.
+      # + BakaSU setup.sh pipeline.
       - name: Remove legacy KernelSU wiring from vince tree
         run: |
           set -euxo pipefail
@@ -130,22 +130,22 @@ jobs:
           echo "legacy KernelSU wiring stripped:"
           grep -rn 'kernelsu' drivers/Makefile drivers/Kconfig scripts/Kbuild.include 2>/dev/null || echo "  (no kernelsu wiring left)"
 
-      - name: Apply ReSukiSU manual-hook patches
+      - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/vince/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/resukisu/4.9/001[0-2]-*.patch"
 
-      - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
+      - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # SuSFS kernel-side port from the test-tree vince reference, applied
-      # AFTER ReSukiSU setup.sh (hook_mode=susfs).
+      # AFTER BakaSU setup.sh (hook_mode=susfs).
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
       # Fork hook types (syscall_table / branch_link) handle the sucompat
       # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
+      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
       - name: Integrate XXKSU kernel (Backslashxx fork)
         if: env.ROOT_MANAGER == 'xxksu'

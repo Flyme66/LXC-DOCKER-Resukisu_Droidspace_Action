@@ -1,4 +1,4 @@
-# ReSukiSU manual hooks — 4.19 树
+# BakaSU manual hooks — 4.19 树
 
 面向 4.19 非 GKI 内核（alioth / kona LOS 树）的树适配必加 hook
 补丁。跨版本相同形态只保留单一副本（在 `../4.9/`）；workflow 以

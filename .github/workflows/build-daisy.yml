@@ -1,7 +1,7 @@
 name: build-daisy
 
 # Builds a Xiaomi Mi A2 Lite (daisy, msm8953) kernel from Flyme66's clean
-# "lineage-20" tree with selectable features (ReSukiSU manual hook / BBG /
+# "lineage-20" tree with selectable features (BakaSU manual hook / BBG /
 # Droidspace) and packages it as an AnyKernel3 zip.
 # Mirrors build-polaris.yml; differences:
 #   - kernel source: Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy @ lineage-20
@@ -100,22 +100,22 @@ jobs:
       - name: Clone kernel source (not part of this repo)
         run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
-      - name: Apply ReSukiSU manual-hook patches
+      - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/0003-fs-open-ksu-manual-hook.patch $GITHUB_WORKSPACE/patches/resukisu/4.9/daisy/0004-kernel-reboot-ksu-manual-hook.patch" "glob:$GITHUB_WORKSPACE/patches/resukisu/4.9/001[0-2]-*.patch"
 
-      - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
+      - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # SuSFS kernel-side port from the test-tree daisy reference, applied
-      # AFTER ReSukiSU setup.sh (hook_mode=susfs).
+      # AFTER BakaSU setup.sh (hook_mode=susfs).
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
       # Fork hook types (syscall_table / branch_link) handle the sucompat
       # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
+      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
       - name: Integrate XXKSU kernel (Backslashxx fork)
         if: env.ROOT_MANAGER == 'xxksu'

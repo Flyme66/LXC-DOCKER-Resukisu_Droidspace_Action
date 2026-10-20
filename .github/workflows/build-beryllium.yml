@@ -1,7 +1,7 @@
 name: build-beryllium
 
 # Builds a Xiaomi POCO F1 (beryllium, sdm845) kernel from Flyme66's
-# clean "thirteen" tree with selectable features (ReSukiSU manual hook /
+# clean "thirteen" tree with selectable features (BakaSU manual hook /
 # BBG / Droidspace) and packages it as an AnyKernel3 zip.
 #
 # Mirrors build-polaris.yml; differences:
@@ -101,11 +101,11 @@ jobs:
       - name: Clone kernel source (not part of this repo)
         run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
-      - name: Apply ReSukiSU manual-hook patches
+      - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9" "$GITHUB_WORKSPACE/patches/resukisu/4.9"
 
-      - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
+      - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
@@ -114,14 +114,14 @@ jobs:
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
       # Fork hook types (syscall_table / branch_link) handle the sucompat
       # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
+      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
       - name: Integrate XXKSU kernel (Backslashxx fork)
         if: env.ROOT_MANAGER == 'xxksu'
         run: bash scripts/integrate-xxksu.sh "$KROOT"
 
       # SuSFS kernel-side port from the test-tree beryllium reference,
-      # applied AFTER ReSukiSU setup.sh (hook_mode=susfs).
+      # applied AFTER BakaSU setup.sh (hook_mode=susfs).
       - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
         run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.9/beryllium/susfs-port.patch"

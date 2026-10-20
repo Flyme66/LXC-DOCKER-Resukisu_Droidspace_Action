@@ -1,4 +1,4 @@
-# ReSukiSU manual hooks — 4.14 树
+# BakaSU manual hooks — 4.14 树
 
 面向 4.14 非 GKI 内核（realme AndroidS MTK 树）的树适配必加 hook
 补丁。跨版本相同形态只保留单一副本（在 `../4.9/`）；workflow 以

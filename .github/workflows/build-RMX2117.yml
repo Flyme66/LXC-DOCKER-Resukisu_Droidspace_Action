@@ -130,11 +130,11 @@ jobs:
           git apply --check "$P" || { echo "ksymtab probe patch does not apply cleanly"; exit 1; }
           git apply "$P"
 
-      # --- ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source) ---
+      # --- BakaSU manual hooks (hook_mode=manual-lsm / manual-source) ---
       # 4.14 tree-adapted manual-hook patches (patches/resukisu/4.14,
-      # 0010-0012 applied for manual-source) + ReSukiSU main + config
+      # 0010-0012 applied for manual-source) + BakaSU main + config
       # fragment via integrate-resukisu.sh.
-      - name: Integrate ReSukiSU manual hooks (hook_mode=manual-lsm / manual-source)
+      - name: Integrate BakaSU manual hooks (hook_mode=manual-lsm / manual-source)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'manual'
         run: |
           cd "$KROOT"
@@ -157,10 +157,10 @@ jobs:
           bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" manual
 
-      # --- ReSukiSU auto hooks (hook_mode=auto) ---
-      # ReSukiSU auto-hook branch via integrate-resukisu.sh (no source
+      # --- BakaSU auto hooks (hook_mode=auto) ---
+      # BakaSU auto-hook branch via integrate-resukisu.sh (no source
       # patches; hook calls come from the runtime inline-hook engine).
-      - name: Integrate ReSukiSU (auto-hook branch)
+      - name: Integrate BakaSU (auto-hook branch)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'auto'
         run: |
           bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
@@ -169,7 +169,7 @@ jobs:
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
       # Fork hook types (syscall_table / branch_link) handle the sucompat
       # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
+      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
       - name: Integrate XXKSU kernel (Backslashxx fork)
         if: env.ROOT_MANAGER == 'xxksu'
@@ -177,14 +177,14 @@ jobs:
 
       # --- SuSFS 4.14 (root_mode=resukisu-susfs) ---
       # Tree-adapted port patches/susfs/4.14/susfs-port.patch (git
-      # apply-verified on MTK 4.14.186 snapshots) + ReSukiSU main; the
+      # apply-verified on MTK 4.14.186 snapshots) + BakaSU main; the
       # port carries the inline-hook call sites.
       - name: Apply SuSFS 4.14 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
         run: |
           cd "$KROOT"
-          # ReSukiSU setup (main branch; wires drivers/kernelsu + Kconfig)
-          curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
+          # BakaSU setup (main branch; wires drivers/kernelsu + Kconfig)
+          curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash -s main
           bash "$GITHUB_WORKSPACE/scripts/apply-susfs-port.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.14/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)

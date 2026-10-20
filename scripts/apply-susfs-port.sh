@@ -5,7 +5,7 @@
 # usage: apply-susfs-port.sh <kernel-root> <port-patch>
 #
 # The port carries both the susfs core and the ksu_handle_* call sites that
-# ReSukiSU's inline_hook_check.mk demands, so one face set is asserted for every
+# BakaSU's inline_hook_check.mk demands, so one face set is asserted for every
 # device and kernel version. The step fails on: a port that does not apply, a
 # missing face, a post-execve call placed before the exec attempt, or a
 # filename_lookup that is still static (fs/open.c and fs/stat.c call it).

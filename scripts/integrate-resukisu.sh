@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
 #
-# integrate-resukisu.sh — ReSukiSU integration into a kernel tree.
+# integrate-resukisu.sh — BakaSU integration into a kernel tree.
 #
 # Usage: integrate-resukisu.sh <kernel-root> [fragment-out] [hook_extra_mode] [hook_type] [auto_fix_49]
 #
 #   hook_extra_mode: lsm     (default) — the 3 optional hooks (setuid / initrc
-#                                      / input) are handled by ReSukiSU's LSM
+#                                      / input) are handled by BakaSU's LSM
 #                                      + input_handler AUTO machinery; NO extra
 #                                      source patches are applied and the three
 #                                      CONFIG_KSU_MANUAL_HOOK_AUTO_* are =y.
 #                    manual            — the 3 optional hooks are applied as real
 #                                      source patches (patches/resukisu/4.9/
 #                                      0010..0012) and the three
-#                                      AUTO options are turned OFF so ReSukiSU's
+#                                      AUTO options are turned OFF so BakaSU's
 #                                      compile-time check requires the manually
 #                                      added ksu_handle_* symbols instead.
 #
-#   hook_type:     manual (default) — source-hook integration: ReSukiSU main
+#   hook_type:     manual (default) — source-hook integration: BakaSU main
 #                                    branch + the mandatory source patches
 #                                    (0001..0004, applied by apply-patches.sh
 #                                    before this script runs).
-#                  auto            — ReSukiSU auto-hook branch: no source
+#                  auto            — BakaSU auto-hook branch: no source
 #                                    patches; ksu_handle_* calls are satisfied
 #                                    by the runtime inline-hook engine. The
 #                                    fragment carries no CONFIG_KSU_MANUAL_HOOK
 #                                    AUTO_* symbols (they do not exist in the
 #                                    auto-hook branch Kconfig).
-#                  susfs           — ReSukiSU main + SuSFS inline hook:
+#                  susfs           — BakaSU main + SuSFS inline hook:
 #                                    kernel-side susfs (fs/susfs.c + hook
 #                                    points) must be applied by the caller;
 #                                    fragment selects CONFIG_KSU_SUSFS=y
@@ -35,7 +35,7 @@
 # Steps:
 #   1. Kernel-side mandatory source patches (stat/exec/open/reboot) are applied
 #      by apply-patches.sh — caller runs it first for hook_type=manual only.
-#   2. Run the ReSukiSU kernel/setup.sh from the kernel root (main or
+#   2. Run the BakaSU kernel/setup.sh from the kernel root (main or
 #      auto-hook branch, checkout via the setup.sh positional arg).
 #   3. Emit the CONFIG_KSU fragment.
 #
@@ -58,12 +58,12 @@ fi
 
 cd "$KROOT"
 
-# --- 1. ReSukiSU setup.sh (idempotent: skip if already wired) ---
+# --- 1. BakaSU setup.sh (idempotent: skip if already wired) ---
 if [ -L drivers/kernelsu ] && [ -d KernelSU ]; then
-  echo "ReSukiSU already integrated (drivers/kernelsu symlink exists), skipping setup.sh"
+  echo "BakaSU already integrated (drivers/kernelsu symlink exists), skipping setup.sh"
 else
-  echo "==> Running ReSukiSU setup.sh (branch=$KSU_BRANCH) ..."
-  curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/$KSU_BRANCH/kernel/setup.sh" | bash -s "$KSU_BRANCH"
+  echo "==> Running BakaSU setup.sh (branch=$KSU_BRANCH) ..."
+  curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/$KSU_BRANCH/kernel/setup.sh" | bash -s "$KSU_BRANCH"
 fi
 
 # sanity checks
@@ -107,7 +107,7 @@ if [ "$TYPE" = "susfs" ]; then
   # static_export_check gate off: without it nine selinux symbols
   # (write_op, sel_mutex, selinux_ops, policy_rwlock, ...) must be
   # de-static'd and exported in the tree.
-  echo "==> hook_type=susfs (ReSukiSU + SuSFS inline hook)"
+  echo "==> hook_type=susfs (BakaSU + SuSFS inline hook)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y
 CONFIG_KALLSYMS_ALL=y
@@ -131,7 +131,7 @@ elif [ "$TYPE" = "auto" ]; then
   # branch's manual_hook_check.mk requires the ksu_handle_* call sites in the
   # source and static_export_check.mk adds selinuxfs exports, so the auto build
   # fails on trees that carry neither.
-  echo "==> hook_type=auto (ReSukiSU auto-hook branch)"
+  echo "==> hook_type=auto (BakaSU auto-hook branch)"
   cat > "$FRAG" <<'EOF'
 CONFIG_KSU=y
 # CONFIG_KSU_DEBUG is not set
@@ -141,7 +141,7 @@ CONFIG_KSU_MANUAL_HOOK=y
 CONFIG_KALLSYMS_ALL=y
 EOF
 elif [ "$MODE" = "manual" ]; then
-  # Manual extra hooks: AUTO off -> ReSukiSU requires ksu_handle_setresuid /
+  # Manual extra hooks: AUTO off -> BakaSU requires ksu_handle_setresuid /
   # ksu_handle_sys_read / ksu_handle_input_handle_event present in the source
   # (they are added by patches/resukisu/4.9/0010..0012).
   echo "==> hook_extra_mode=manual (source patches + AUTO off)"
@@ -172,5 +172,5 @@ CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK=y
 EOF
 fi
 
-echo "ReSukiSU fragment written: $FRAG"
+echo "BakaSU fragment written: $FRAG"
 echo "integrate-resukisu.sh: done (hook_extra_mode=$MODE, hook_type=$TYPE)"

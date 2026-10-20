@@ -8,7 +8,7 @@ env: ROOT_MANAGER HOOK_TYPE
 
 Display: one left-aligned line —
     <codename>  <manager>  <hook> | <feature>  <feature> ...
-hook names: ReSukiSU -> AUTO HOOK / SUSFS INLINE HOOK / MANUAL HOOK;
+hook names: BakaSU -> AUTO HOOK / SUSFS INLINE HOOK / MANUAL HOOK;
 XXKSU -> SUSFS INLINE HOOK / SYSCALL TABLE HOOK / BRANCH LINK HOOK.
 features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
 omitted. Package name: <codename>_<manager>_<hook>[_<feature>...].zip,
@@ -53,7 +53,7 @@ feat_flags = [
 feats = [name for name, on in feat_flags if on]
 
 if rm == 'resukisu':
-    manager = 'ReSukiSU'
+    manager = 'BakaSU'
     hook, token = {'auto': ('AUTO HOOK', 'AUTO'),
                    'susfs': ('SUSFS INLINE HOOK', 'SUSFS'),
                    }.get(ht, ('MANUAL HOOK', 'MANUAL'))

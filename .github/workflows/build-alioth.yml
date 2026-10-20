@@ -2,7 +2,7 @@ name: build-alioth
 
 # Builds a Xiaomi Redmi K40 / POCO F3 / Mi 11X (alioth, sm8250/kona) kernel from
 # MOSSVENC's fork of the LineageOS 4.19 kernel with selectable features
-# (ReSukiSU hook modes / BBG / Droidspace 4.19 / SuSFS 4.19 via the
+# (BakaSU hook modes / BBG / Droidspace 4.19 / SuSFS 4.19 via the
 # test-tree reference) and packages it as an AnyKernel3 zip.
 #
 # Kernel: 4.19.325 (arch/arm64, CAF kona), boot image header v3 on a
@@ -123,7 +123,7 @@ jobs:
             arch/arm64/boot/dts/vendor/qcom/fg-gen4-batterydata-alioth-GY-4520mah.dtsi
           grep -n 'qcom,fv-max-uv' arch/arm64/boot/dts/vendor/qcom/alioth-sm8250.dtsi
 
-      - name: Apply ReSukiSU manual-hook patches
+      - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
         run: |
           # File-level list: shared shapes (stat/exec/reboot/input) live
@@ -144,18 +144,18 @@ jobs:
           fi
           bash scripts/apply-patches.sh "$KROOT" $PATCHES
 
-      - name: Integrate ReSukiSU (kernel/setup.sh + config fragment)
+      - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # SuSFS 4.19 kernel-side port from the test-tree 5.10->4.19 pipeline,
-      # applied AFTER ReSukiSU setup.sh (hook_mode=susfs).
+      # applied AFTER BakaSU setup.sh (hook_mode=susfs).
       # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
       # Fork hook types (syscall_table / branch_link) handle the sucompat
       # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the ReSukiSU setup (KernelSU/kernel
+      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
       # symlinked as drivers/kernelsu). Tracks the fork master branch.
       - name: Integrate XXKSU kernel (Backslashxx fork)
         if: env.ROOT_MANAGER == 'xxksu'

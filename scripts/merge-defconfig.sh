@@ -88,19 +88,19 @@ elif [ "${CLEAR_LOCALVERSION:-false}" = "true" ]; then
   echo "localversion: (cleared)"
 fi
 
-# --- KALLSYMS_ALL override (always): ReSukiSU resolves its selinux static
+# --- KALLSYMS_ALL override (always): BakaSU resolves its selinux static
 # symbols (write_op / sel_handle_status_ops / selinux_status_page|lock /
 # sel_mutex / policy_rwlock / ...) through the kallsyms table when
 # CONFIG_KALLSYMS_ALL=y and falls back to `extern` direct references when
 # it is off. The extern path requires those symbols to be manually
 # de-static'ed in the kernel source (official static_export_check.mk);
 # this repo relies on the KALLSYMS_ALL path, so no de-static patches are
-# shipped. ReSukiSU's own Kconfig only `select KALLSYMS`; it cannot select
+# shipped. BakaSU's own Kconfig only `select KALLSYMS`; it cannot select
 # KALLSYMS_ALL because that symbol `depends on DEBUG_KERNEL && KALLSYMS`
 # and select cannot cross a depends-on. So pin the whole chain here
 # instead of relying on the LOS baseline to keep it enabled.
 echo "CONFIG_DEBUG_KERNEL=y"      >> "$RAW"   # KALLSYMS_ALL dependency
-echo "CONFIG_KALLSYMS=y"          >> "$RAW"   # ReSukiSU select + dep
+echo "CONFIG_KALLSYMS=y"          >> "$RAW"   # BakaSU select + dep
 echo "CONFIG_KALLSYMS_ALL=y"      >> "$RAW"   # static symbols into table
 
 # --- de-dup: keep the LAST occurrence of each symbol ---
@@ -142,13 +142,13 @@ assert_cfg() { # symbol
 
 rc=0
 
-# KALLSYMS_ALL must survive into the final .config: ReSukiSU resolves
+# KALLSYMS_ALL must survive into the final .config: BakaSU resolves
 # every selinux static symbol through kallsyms only when this is y.
 # Fail loudly if it got dropped.
 assert_cfg CONFIG_KALLSYMS || rc=1
 assert_cfg CONFIG_KALLSYMS_ALL || rc=1
 
-# Root manager dispatch: resukisu (ReSukiSU main, manual/susfs hooks),
+# Root manager dispatch: resukisu (BakaSU main, manual/susfs hooks),
 # xxksu (Backslashxx fork hook types) or none. Workflows that predate
 # root_manager pass ENABLE_RESUKISU only and are mapped here.
 if [ -z "${ROOT_MANAGER:-}" ]; then

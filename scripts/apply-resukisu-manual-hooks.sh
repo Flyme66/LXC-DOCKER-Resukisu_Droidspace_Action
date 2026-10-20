@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# apply-resukisu-manual-hooks.sh — apply the ReSukiSU manual-hook patch set.
+# apply-resukisu-manual-hooks.sh — apply the BakaSU manual-hook patch set.
 #
 # usage: apply-resukisu-manual-hooks.sh <kernel-root> <patch-spec> [<extra-spec>]
 #

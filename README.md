@@ -25,10 +25,10 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 
 | `root_mode` | root 管理器 | hook 形态 |
 |---|---|---|
-| `resukisu-manual-lsm` | ReSukiSU main | 源码补丁 + 自动 hook（input 经内核 input_handler；setuid/initrc 经 LSM AUTO） |
-| `resukisu-manual-source` | ReSukiSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read，0010-0012） |
-| `resukisu-auto` | ReSukiSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁，构建侧开 `KALLSYMS_ALL`；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
-| `resukisu-susfs` | ReSukiSU main | SuSFS inline hook（应用各设备树适配补丁） |
+| `resukisu-manual-lsm` | BakaSU main | 源码补丁 + 自动 hook（input 经内核 input_handler；setuid/initrc 经 LSM AUTO） |
+| `resukisu-manual-source` | BakaSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read，0010-0012） |
+| `resukisu-auto` | BakaSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁，构建侧开 `KALLSYMS_ALL`；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
+| `resukisu-susfs` | BakaSU main | SuSFS inline hook（应用各设备树适配补丁） |
 | `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | hook 类型 `syscall_table` |
 | `xxksu-branch_link` | Backslashxx KernelSU fork（master） | hook 类型 `branch_link` |
 | `none`（默认） | — | stock，无 root 集成 |
@@ -52,7 +52,7 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 各内核版本的分支补丁形态见 fork issue #5/#7（收录于
 `localworkspace/evidence/xxksu-docs/`）。
 
-## ReSukiSU manual hook 七类
+## BakaSU manual hook 七类
 
 按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)
 （本地工作区 `localworkspace/evidence/resukisu-docs/` 有页面收录），
@@ -181,7 +181,7 @@ localworkspace/        本机工作区（gitignored；布局见 localworkspace/R
 ```bash
 KROOT=/path/to/kernel-clone   # git clone -b lineage-22.2 .../android_kernel_xiaomi_sdm845
 
-# 1. ReSukiSU manual hook 源码补丁（root_mode=resukisu-auto 时跳过）
+# 1. BakaSU manual hook 源码补丁（root_mode=resukisu-auto 时跳过）
 bash scripts/apply-patches.sh "$KROOT" patches/resukisu/4.9
 # daisy/vince：传 4.9 目录 0001-0003 单文件 + <dev>/0004
 
@@ -215,6 +215,6 @@ make -j$(nproc) O=/tmp/out ARCH=arm64 CC=clang \
 - vince 树自带旧 KernelSU：集成前用
   `patches/resukisu/4.9/vince/0000-remove-legacy-ksu-hooks.patch` 剥离
 - Droidspace cgroup 移植补丁非致命：apply 失败自动跳过
-- ReSukiSU 管理器（Manager APK）版本需自行匹配；setup.sh 按 root_mode
+- BakaSU 管理器（Manager APK）版本需自行匹配；setup.sh 按 root_mode
   分支拉取（manual=main、auto=auto-hook）
 - 32 位兼容：`CONFIG_COMPAT=y`，fstat64/fstatat64 hook 在 0001 内
