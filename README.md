@@ -54,7 +54,7 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 
 ## BakaSU manual hook 七类
 
-按 [resukisu.org manual-integrate](https://resukisu.org/zh-Hans/guide/manual-integrate.html)
+按 [bakasu.org manual-integrate](https://bakasu.org/zh-Hans/guide/manual-integrate.html)
 （本地工作区 `localworkspace/evidence/resukisu-docs/` 有页面收录），
 4 类必须改源码、3 类可选。本仓库补丁布局：4.9/4.14/4.19 版本目录，
 跨版本相同形态单一真身存 `4.9/`，workflow 以文件级清单跨目录引用。
