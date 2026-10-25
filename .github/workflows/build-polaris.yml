@@ -1,7 +1,7 @@
 name: build-polaris
 
-# Builds a Xiaomi Mi MIX 2S (polaris, sdm845) 4.19 kernel for Android 16
-# AOSP ROMs, with selectable features (BakaSU hook / BBG / Droidspace),
+# Builds a Xiaomi Mi MIX 2S (polaris, sdm845) 4.19 kernel for AviumUI
+# (Android 16), with selectable features (BakaSU hook / BBG / Droidspace),
 # packaged as an AnyKernel3 zip.
 #
 # Feature defaults mirror the workflow_dispatch input defaults below.
@@ -12,7 +12,7 @@ on:
       kernel_ref:
         description: kernel branch or ref
         required: false
-        default: lineage-23.2_xiaomi
+        default: avium-16.2
       root_mode:
         description: "root manager & hook mode: see README section \"root_mode\""
         type: choice
@@ -58,8 +58,9 @@ jobs:
     timeout-minutes: 180
     env:
       # workflow_dispatch inputs are empty on push-triggered runs, so every
-      # option falls back to a default (lineage-23.2_xiaomi).
-      KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-23.2_xiaomi' }}
+      # option falls back to a default (avium-16.2).
+      KERNEL_REPO: https://github.com/polaris-avium/kernel_xiaomi_sdm845.git
+      KERNEL_REF: ${{ inputs.kernel_ref || 'avium-16.2' }}
       DEFCONFIG: sdm845-perf_defconfig
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
       ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
@@ -89,7 +90,7 @@ jobs:
         run: bash scripts/download-toolchain.sh llvmorg-19.1.7 "" --gcc32
 
       - name: Clone kernel source (not part of this repo)
-        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" https://github.com/duckyduckG/android_kernel_xiaomi_sdm845_419.git "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
+        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" $KERNEL_REPO "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
@@ -105,7 +106,7 @@ jobs:
       # kernel/sys.c etc.
       - name: Apply SuSFS 4.19 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
-        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.19-polaris/susfs-port.patch"
+        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.19/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -126,20 +127,6 @@ jobs:
         run: |
           bash scripts/apply-patches.sh "$KROOT" \
             "$GITHUB_WORKSPACE/patches/sdcardfs"
-
-      # LOS lineage-23.2 backported scripts/as-version.sh but its companion
-      # scripts/min-tool-version.sh never landed in the tree; Kconfig.include
-      # calls as-version.sh during alldefconfig and fails on the missing file.
-      - name: Restore missing scripts/min-tool-version.sh (LOS tree gap)
-        run: |
-          cd "$KROOT"
-          if [ -f scripts/min-tool-version.sh ]; then
-            echo "scripts/min-tool-version.sh already present"
-          else
-            cp "$GITHUB_WORKSPACE/patches/alioth/min-tool-version.sh" scripts/
-            chmod +x scripts/min-tool-version.sh
-            echo "restored scripts/min-tool-version.sh"
-          fi
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping

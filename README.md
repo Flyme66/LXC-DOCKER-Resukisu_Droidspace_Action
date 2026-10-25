@@ -8,7 +8,7 @@ workflow_dispatch 手动触发。
 
 | 设备 | 代号 | 内核 | 内核源 / 分支 | workflow |
 |---|---|---|---|---|
-| Xiaomi Mi MIX 2S | `polaris` (sdm845) | 4.19.325 | [duckyduckG/android_kernel_xiaomi_sdm845_419](https://github.com/duckyduckG/android_kernel_xiaomi_sdm845_419) @ `lineage-23.2_xiaomi`（AOSP A16） | `build-polaris.yml` |
+| Xiaomi Mi MIX 2S | `polaris` (sdm845) | 4.19.325 | [polaris-avium/kernel_xiaomi_sdm845](https://github.com/polaris-avium/kernel_xiaomi_sdm845) @ `avium-16.2`（AviumUI A16） | `build-polaris.yml` |
 | Xiaomi POCO F1 | `beryllium` (sdm845) | 4.9.337 | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
 | Xiaomi Mi A2 Lite | `daisy` (msm8953) | 4.9.337 | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
 | Xiaomi Redmi 5 Plus | `vince` (msm8953) | 4.9.337 | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
@@ -91,7 +91,7 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
 
 susfs 应用路径（全部为树适配 port）：polaris 用
-`patches/susfs/4.19-polaris/susfs-port.patch`；beryllium/daisy/vince 用
+`patches/susfs/4.19/susfs-port.patch`；beryllium/daisy/vince 用
 `patches/susfs/4.9/<设备>/susfs-port.patch`；alioth 用
 `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
 `patches/susfs/4.14/susfs-port.patch`。
@@ -131,7 +131,7 @@ patches/
   susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
   bbg/                 集成说明（无本地补丁）
   sdcardfs/            Android/data 隔离（仅 polaris）
-  alioth/              min-tool-version.sh（构建辅助，polaris 4.19 树同样需要）
+  alioth/              min-tool-version.sh（构建辅助）
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
                        ak3-display 等）
 上游素材镜像（susfs/resukisu）、旧 shipped 归档与维护工具
