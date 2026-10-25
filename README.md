@@ -8,7 +8,7 @@ workflow_dispatch 手动触发。
 
 | 设备 | 代号 | 内核 | 内核源 / 分支 | workflow |
 |---|---|---|---|---|
-| Xiaomi Mi MIX 2S | `polaris` (sdm845) | 4.9.337 | [MOSSVENC/android_kernel_xiaomi_sdm845](https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845) @ `lineage-22.2` | `build-polaris.yml` |
+| Xiaomi Mi MIX 2S | `polaris` (sdm845) | 4.19.325 | [duckyduckG/android_kernel_xiaomi_sdm845_419](https://github.com/duckyduckG/android_kernel_xiaomi_sdm845_419) @ `lineage-23.2_xiaomi`（AOSP A16） | `build-polaris.yml` |
 | Xiaomi POCO F1 | `beryllium` (sdm845) | 4.9.337 | [Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium](https://github.com/Flyme66/kernel_xiaomi_sdm845_tejas101k_beryllium) @ `thirteen` | `build-beryllium.yml` |
 | Xiaomi Mi A2 Lite | `daisy` (msm8953) | 4.9.337 | [Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy](https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy) @ `lineage-20` | `build-daisy.yml` |
 | Xiaomi Redmi 5 Plus | `vince` (msm8953) | 4.9.337 | [Flyme66/kernel_xiaomi_OctaviOS_vince](https://github.com/Flyme66/kernel_xiaomi_OctaviOS_vince) @ `13` | `build-vince.yml` |
@@ -29,28 +29,9 @@ workflow_dispatch 输入编排六设备一致：`kernel_ref` + `root_mode` +
 | `resukisu-manual-source` | BakaSU main | 源码补丁 + alt manual hooks（input/setuid/sys_read，0010-0012） |
 | `resukisu-auto` | BakaSU auto-hook 分支 | 函数入口 inline-hook 引擎（免源码补丁，构建侧开 `KALLSYMS_ALL`；4.x 用 `auto_fix_49` kasan_reset_tag 门槛修正） |
 | `resukisu-susfs` | BakaSU main | SuSFS inline hook（应用各设备树适配补丁） |
-| `xxksu-syscall_table` | Backslashxx KernelSU fork（master） | hook 类型 `syscall_table` |
-| `xxksu-branch_link` | Backslashxx KernelSU fork（master） | hook 类型 `branch_link` |
 | `none`（默认） | — | stock，无 root 集成 |
 
-- 值集：六设备一致，共 7 值（root 管理器与 hook 类型单选互斥：manual /
-  auto / susfs / syscall_table / branch_link）
-
-## XXKSU hook 类型适用范围
-
-范围标注来自 fork 的 `kernel/Kconfig` 帮助文本（树内选项自带）：
-
-| 机制 | 适用内核 | 上游推荐范围 |
-|---|---|---|
-| `KSU_TAMPER_SYSCALL_TABLE` | ARM / ARM64 | 3.0 至 4.14（验证 3.0 至 7.1） |
-| `KSU_HACK_ARM64_BRANCH_LINK` | ARM64 + KALLSYMS | 4.19 及以上（验证 3.10 至 7.1） |
-| `KSU_LSM_SECURITY_HOOKS` | 任意 | 默认开启；仅 non-ARM64 且 >6.8 的构建关闭时才需手工 security.c 钩子 |
-
-本仓库对应：4.9/4.14 设备用 `syscall_table`，4.19（alioth）用
-`branch_link`；六机均为 ARM64 且 ≤4.19，保持 `KSU_LSM_SECURITY_HOOKS=y`。
-
-各内核版本的分支补丁形态见 fork issue #5/#7（收录于
-`localworkspace/evidence/xxksu-docs/`）。
+- 值集：六设备一致，共 5 值（BakaSU manual / auto / susfs，或 none）
 
 ## BakaSU manual hook 七类
 
@@ -77,7 +58,8 @@ input hook 的自动面不经 LSM：input_handler 未损坏的内核只需
 
 | 设备族 | 配方 |
 |---|---|
-| 4.9 / 4.19 | AOSP clang 14（clang-r450784d）+ GCC 4.9 prebuilts（binutils），`LD=ld.lld LLVM=1 LLVM_IAS=1`，4.9 另需 `CROSS_COMPILE_ARM32` 绝对前缀（compat vDSO） |
+| 4.9（beryllium/daisy/vince） | AOSP clang 14（clang-r450784d）+ GCC 4.9 prebuilts（binutils），`LD=ld.lld LLVM=1 LLVM_IAS=1`，另需 `CROSS_COMPILE_ARM32` 绝对前缀（compat vDSO） |
+| 4.19（polaris/alioth） | polaris 用 LLVM 19（llvmorg-19.1.7）；alioth 用 AOSP clang 14 |
 | RMX2117（4.14） | 官方 `build.config.mtk.aarch64` 配方：clang r383902 + GCC 4.9 的 `aarch64-linux-androidkernel-` 前缀，`LD=ld.lld NM=llvm-nm OBJCOPY=llvm-objcopy` |
 
 ## 特性细节
@@ -109,7 +91,7 @@ owner 判定复用 vold 经 configfs 填的 packagelist。`Android/obb` 保持�
 分支对 <5.0 树的本征修正，4.9/4.14 设备构建 auto 模式时需勾选）。
 
 susfs 应用路径（全部为树适配 port）：polaris 用
-`patches/susfs/4.9/susfs-port.patch`；beryllium/daisy/vince 用
+`patches/susfs/4.19-polaris/susfs-port.patch`；beryllium/daisy/vince 用
 `patches/susfs/4.9/<设备>/susfs-port.patch`；alioth 用
 `patches/susfs/4.19/susfs-port.patch`；RMX2117 用
 `patches/susfs/4.14/susfs-port.patch`。
@@ -126,7 +108,7 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 ```
 <BASE_DEFCONFIG>
   + <DEVICE_FRAGMENTS>
-  + resukisu.config.fragment / xxksu.config.fragment / susfs.config.fragment（按 root_mode）
+  + resukisu.config.fragment / susfs.config.fragment（按 root_mode）
   + bbg/droidspace fragment（按特性开关）
   + 强制覆盖：CC_WERROR off、KALLSYMS(+ALL)=y
   → 断言（缺失即失败）
@@ -136,7 +118,7 @@ selinux 静态符号由 `CONFIG_KALLSYMS_ALL=y` 的 kallsyms 解析（合并阶�
 再合并，否则新符号会被静默丢弃。管线固定为：打补丁 → setup → 合并 →
 断言 → 编译。
 
-基线：polaris 用 `vendor/xiaomi/mi845_defconfig` + polaris.config；
+基线：polaris 用 `vendor/sdm845-perf_defconfig` + `vendor/xiaomi/sdm845-common.config` + polaris.config；
 beryllium / daisy / vince 用自带自包含 defconfig；alioth 用
 kona-perf + 官方 device fragments；RMX2117 用 `k6853v1_64_6360_defconfig`。
 
@@ -149,10 +131,10 @@ patches/
   susfs/               4.9/4.14/4.19 树适配补丁（含设备子目录）
   bbg/                 集成说明（无本地补丁）
   sdcardfs/            Android/data 隔离（仅 polaris）
-  alioth/              min-tool-version.sh（构建辅助）
+  alioth/              min-tool-version.sh（构建辅助，polaris 4.19 树同样需要）
 scripts/               编排脚本（apply-patches / integrate-* / merge-defconfig /
                        ak3-display 等）
-上游素材镜像（susfs/resukisu/xxksu）、旧 shipped 归档与维护工具
+上游素材镜像（susfs/resukisu）、旧 shipped 归档与维护工具
 （sync/parity/管线）均位于本地工作区（localworkspace/），不随仓库分发；
 官方补丁中 CI 直接应用的（droidspace）保留在 official/。
 localworkspace/        本机工作区（gitignored；布局见 localworkspace/README.md、条目索引见 INDEX.md）

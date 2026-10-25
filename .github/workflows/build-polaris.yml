@@ -1,8 +1,8 @@
 name: build-polaris
 
-# Builds a Xiaomi Mi MIX 2S (polaris, sdm845) kernel with selectable
-# features (BakaSU manual hook / BBG / Droidspace) and packages it as an
-# AnyKernel3 zip.
+# Builds a Xiaomi Mi MIX 2S (polaris, sdm845) 4.19 kernel for Android 16
+# AOSP ROMs, with selectable features (BakaSU hook / BBG / Droidspace),
+# packaged as an AnyKernel3 zip.
 #
 # Feature defaults mirror the workflow_dispatch input defaults below.
 
@@ -12,7 +12,7 @@ on:
       kernel_ref:
         description: kernel branch or ref
         required: false
-        default: lineage-22.2
+        default: lineage-23.2_xiaomi
       root_mode:
         description: "root manager & hook mode: see README section \"root_mode\""
         type: choice
@@ -21,8 +21,6 @@ on:
           - resukisu-manual-source
           - resukisu-auto
           - resukisu-susfs
-          - xxksu-syscall_table
-          - xxksu-branch_link
           - none
         default: none
       localversion:
@@ -39,10 +37,6 @@ on:
         default: false
       enable_droidspace:
         description: enable Droidspaces/LXC kernel support
-        type: boolean
-        default: false
-      cgroup_port:
-        description: 4.9 cgroup noprefix compat patch (droidspace)
         type: boolean
         default: false
       enable_data_isolation:
@@ -64,19 +58,17 @@ jobs:
     timeout-minutes: 180
     env:
       # workflow_dispatch inputs are empty on push-triggered runs, so every
-      # option falls back to a default (lineage-22.2 + all features on).
-      KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-22.2' }}
-      DEFCONFIG: mi845_defconfig
+      # option falls back to a default (lineage-23.2_xiaomi).
+      KERNEL_REF: ${{ inputs.kernel_ref || 'lineage-23.2_xiaomi' }}
+      DEFCONFIG: sdm845-perf_defconfig
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
-      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
-      HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
+      HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       CUSTOM_LOCALVERSION: ${{ inputs.localversion }}
       CUSTOM_BUILD_TIME: ${{ inputs.build_time }}
       TZ: UTC
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
-      CGROUP_PORT: ${{ inputs.cgroup_port }}
       ENABLE_DATA_ISOLATION: ${{ inputs.enable_data_isolation }}
       AUTO_FIX_49: ${{ inputs.auto_fix_49 }}
     steps:
@@ -86,46 +78,34 @@ jobs:
       # NOTE: no "Free disk space" step — it intermittently stalls on some
       # runners for many minutes; our build fits in the runner's disk.
 
-      # Unified toolchain across all supported devices: AOSP clang 14
-      # (clang-r450784d from android13-release) + system binutils (see
-      # README "工具链": LLVM=1 + CLANG_TRIPLE on the CAF 4.9 tree).
+      # 4.19 tree: LLVM 19 (see README "工具链").
       - name: Start full log
         run: bash scripts/full-log.sh polaris
 
       - name: Install binutils
         run: bash scripts/install-binutils.sh
 
-      - name: Download AOSP clang 14 + GCC 4.9 binutils
-        run: bash scripts/download-toolchain.sh clang-r450784d android13-release --gcc32
+      - name: Download LLVM 19 + GCC 4.9 binutils
+        run: bash scripts/download-toolchain.sh llvmorg-19.1.7 "" --gcc32
 
       - name: Clone kernel source (not part of this repo)
-        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" https://github.com/MOSSVENC/android_kernel_xiaomi_sdm845.git "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
+        run: bash "$GITHUB_WORKSPACE/scripts/clone-kernel-source.sh" https://github.com/duckyduckG/android_kernel_xiaomi_sdm845_419.git "$KERNEL_REF" "$RUNNER_TEMP/kernel" 40
 
       - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
-        run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.9" "$GITHUB_WORKSPACE/patches/resukisu/4.9"
+        run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.14" "$GITHUB_WORKSPACE/patches/resukisu/4.14"
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'
         run: |
           bash scripts/integrate-resukisu.sh "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
-
-      # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
-      # Fork hook types (syscall_table / branch_link) handle the sucompat
-      # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
-      # symlinked as drivers/kernelsu). Tracks the fork master branch.
-      - name: Integrate XXKSU kernel (Backslashxx fork)
-        if: env.ROOT_MANAGER == 'xxksu'
-        run: bash scripts/integrate-xxksu.sh "$KROOT"
-
       # SuSFS kernel-side port must run AFTER BakaSU setup.sh: the hook
       # generator checks drivers/kernelsu/ for ksu_handle_* before wiring
       # kernel/sys.c etc.
-      - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
+      - name: Apply SuSFS 4.19 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
-        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.9/susfs-port.patch"
+        run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.19-polaris/susfs-port.patch"
 
       - name: Integrate Baseband-guard (BBG)
         if: env.ENABLE_BBG == 'true'
@@ -139,18 +119,27 @@ jobs:
 
       - name: Integrate Droidspace (patch + config)
         if: env.ENABLE_DROIDSPACE == 'true'
-        run: |
-          PORT=""
-          if [ "$CGROUP_PORT" = "true" ]; then
-            PORT="$GITHUB_WORKSPACE/patches/droidspace/4.9/0001-cgroup-noprefix-4.9-port.patch"
-          fi
-          bash scripts/integrate-droidspace.sh "$KROOT" "$PORT"
+        run: bash scripts/integrate-droidspace.sh "$KROOT" ""
 
       - name: Apply sdcardfs Android/data isolation patch
         if: env.ENABLE_DATA_ISOLATION == 'true'
         run: |
           bash scripts/apply-patches.sh "$KROOT" \
             "$GITHUB_WORKSPACE/patches/sdcardfs"
+
+      # LOS lineage-23.2 backported scripts/as-version.sh but its companion
+      # scripts/min-tool-version.sh never landed in the tree; Kconfig.include
+      # calls as-version.sh during alldefconfig and fails on the missing file.
+      - name: Restore missing scripts/min-tool-version.sh (LOS tree gap)
+        run: |
+          cd "$KROOT"
+          if [ -f scripts/min-tool-version.sh ]; then
+            echo "scripts/min-tool-version.sh already present"
+          else
+            cp "$GITHUB_WORKSPACE/patches/alioth/min-tool-version.sh" scripts/
+            chmod +x scripts/min-tool-version.sh
+            echo "restored scripts/min-tool-version.sh"
+          fi
 
       # Commit all applied patches so `make`'s setlocalversion sees a clean
       # git tree -> kernel version loses the "-dirty" suffix while keeping
@@ -163,11 +152,11 @@ jobs:
           FRAGS=""
           if [ "$ROOT_MANAGER" = "resukisu" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
-          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/xxksu.config.fragment"
           fi
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
-          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"
+          [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.19/droidspace.config"
+          BASE_DEFCONFIG="arch/arm64/configs/vendor/sdm845-perf_defconfig" \
+          DEVICE_FRAGMENTS="arch/arm64/configs/vendor/debugfs.config arch/arm64/configs/vendor/xiaomi/sdm845-common.config arch/arm64/configs/vendor/xiaomi/polaris.config" \
           ROOT_MANAGER="$ROOT_MANAGER" \
           ENABLE_BBG="$ENABLE_BBG" \
           ENABLE_DROIDSPACE="$ENABLE_DROIDSPACE" \

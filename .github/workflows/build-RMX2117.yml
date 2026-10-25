@@ -22,8 +22,6 @@ on:
           - resukisu-manual-source
           - resukisu-auto
           - resukisu-susfs
-          - xxksu-syscall_table
-          - xxksu-branch_link
           - none
         default: none
       localversion:
@@ -56,7 +54,7 @@ jobs:
     timeout-minutes: 240
     env:
       KERNEL_REF: ${{ inputs.kernel_ref || 'master' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
       HOOK_TYPE: ${{ endsWith(inputs.root_mode, '-auto') && 'auto' || endsWith(inputs.root_mode, '-susfs') && 'susfs' || endsWith(inputs.root_mode, '-syscall_table') && 'syscall_table' || endsWith(inputs.root_mode, '-branch_link') && 'branch_link' || startsWith(inputs.root_mode, 'resukisu') && 'manual' || 'none' }}
       HOOK_EXTRA: ${{ endsWith(inputs.root_mode, '-manual-source') && 'manual' || endsWith(inputs.root_mode, '-manual-lsm') && 'lsm' || '' }}
@@ -165,16 +163,6 @@ jobs:
         run: |
           bash "$GITHUB_WORKSPACE/scripts/integrate-resukisu.sh" "$KROOT" \
             "$GITHUB_WORKSPACE/resukisu.config.fragment" lsm auto "$AUTO_FIX_49"
-
-      # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
-      # Fork hook types (syscall_table / branch_link) handle the sucompat
-      # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
-      # symlinked as drivers/kernelsu). Tracks the fork master branch.
-      - name: Integrate XXKSU kernel (Backslashxx fork)
-        if: env.ROOT_MANAGER == 'xxksu'
-        run: bash scripts/integrate-xxksu.sh "$KROOT"
-
       # --- SuSFS 4.14 (root_mode=resukisu-susfs) ---
       # Tree-adapted port patches/susfs/4.14/susfs-port.patch (git
       # apply-verified on MTK 4.14.186 snapshots) + BakaSU main; the
@@ -244,8 +232,6 @@ jobs:
             else
               FRAGS="$GITHUB_WORKSPACE/resukisu.config.fragment"
             fi
-          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
-            FRAGS="$GITHUB_WORKSPACE/xxksu.config.fragment"
           fi
           if [ "$ENABLE_BBG" = "true" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"

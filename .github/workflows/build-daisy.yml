@@ -24,8 +24,6 @@ on:
           - resukisu-manual-source
           - resukisu-auto
           - resukisu-susfs
-          - xxksu-syscall_table
-          - xxksu-branch_link
           - none
         default: none
       localversion:
@@ -68,7 +66,7 @@ jobs:
       KERNEL_REPO: https://github.com/Flyme66/android_kernel_xiaomi_msm8953_ItsVixano_daisy.git
       DEFCONFIG: msm8953-perf_defconfig
       HOOK_MODE: ${{ inputs.root_mode || 'none' }}
-      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || startsWith(inputs.root_mode, 'xxksu') && 'xxksu' || 'none' }}
+      ROOT_MANAGER: ${{ startsWith(inputs.root_mode, 'resukisu') && 'resukisu' || 'none' }}
       ENABLE_BBG: ${{ inputs.enable_bbg }}
       ENABLE_DROIDSPACE: ${{ inputs.enable_droidspace }}
       CGROUP_PORT: ${{ inputs.cgroup_port }}
@@ -111,16 +109,6 @@ jobs:
             "$GITHUB_WORKSPACE/resukisu.config.fragment" "$HOOK_EXTRA" "$HOOK_TYPE" "$AUTO_FIX_49"
 
       # SuSFS kernel-side port from the test-tree daisy reference, applied
-      # AFTER BakaSU setup.sh (hook_mode=susfs).
-      # --- XXKSU (root_mode=xxksu-*): Backslashxx KernelSU fork ---
-      # Fork hook types (syscall_table / branch_link) handle the sucompat
-      # call sites itself: no manual source patches, no inline-hook
-      # generator. Layout mirrors the BakaSU setup (KernelSU/kernel
-      # symlinked as drivers/kernelsu). Tracks the fork master branch.
-      - name: Integrate XXKSU kernel (Backslashxx fork)
-        if: env.ROOT_MANAGER == 'xxksu'
-        run: bash scripts/integrate-xxksu.sh "$KROOT"
-
       - name: Apply SuSFS 4.9 port (root_mode=resukisu-susfs)
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE == 'susfs'
         run: bash scripts/apply-susfs-port.sh "$KROOT" "$GITHUB_WORKSPACE/patches/susfs/4.9/daisy/susfs-port.patch"
@@ -155,8 +143,6 @@ jobs:
           FRAGS=""
           if [ "$ROOT_MANAGER" = "resukisu" ]; then
             FRAGS="$FRAGS $GITHUB_WORKSPACE/resukisu.config.fragment"
-          elif [ "$ROOT_MANAGER" = "xxksu" ]; then
-            FRAGS="$FRAGS $GITHUB_WORKSPACE/xxksu.config.fragment"
           fi
           [ "$ENABLE_BBG" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/bbg.config.fragment"
           [ "$ENABLE_DROIDSPACE" = "true" ] && FRAGS="$FRAGS $GITHUB_WORKSPACE/patches/droidspace/4.9/droidspace.config"

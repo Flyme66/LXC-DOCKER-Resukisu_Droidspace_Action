@@ -148,34 +148,12 @@ rc=0
 assert_cfg CONFIG_KALLSYMS || rc=1
 assert_cfg CONFIG_KALLSYMS_ALL || rc=1
 
-# Root manager dispatch: resukisu (BakaSU main, manual/susfs hooks),
-# xxksu (Backslashxx fork hook types) or none. Workflows that predate
-# root_manager pass ENABLE_RESUKISU only and are mapped here.
+# Root manager dispatch: resukisu (BakaSU hook modes) or none. Workflows
+# that predate root_manager pass ENABLE_RESUKISU only and are mapped here.
 if [ -z "${ROOT_MANAGER:-}" ]; then
   if [ "${ENABLE_RESUKISU:-true}" = "true" ]; then ROOT_MANAGER=resukisu; else ROOT_MANAGER=none; fi
 fi
-if [ "${ROOT_MANAGER:-none}" = "xxksu" ]; then
-  assert_cfg CONFIG_KSU || rc=1
-  assert_cfg CONFIG_KSU_LSM_SECURITY_HOOKS || rc=1
-  case "${HOOK_TYPE:-syscall_table}" in
-    branch_link)
-      assert_cfg CONFIG_KSU_HACK_ARM64_BRANCH_LINK || rc=1
-      if grep -qE "^CONFIG_KSU_TAMPER_SYSCALL_TABLE=y$" "$CFG"; then
-        echo "   FAIL CONFIG_KSU_TAMPER_SYSCALL_TABLE (branch_link wants it off)" >&2
-        rc=1
-      else
-        echo "   OK   CONFIG_KSU_TAMPER_SYSCALL_TABLE is not set"
-      fi ;;
-    syscall_table)
-      assert_cfg CONFIG_KSU_TAMPER_SYSCALL_TABLE || rc=1
-      if grep -qE "^CONFIG_KSU_HACK_ARM64_BRANCH_LINK=y$" "$CFG"; then
-        echo "   FAIL CONFIG_KSU_HACK_ARM64_BRANCH_LINK (syscall_table wants it off)" >&2
-        rc=1
-      else
-        echo "   OK   CONFIG_KSU_HACK_ARM64_BRANCH_LINK is not set"
-      fi ;;
-  esac
-elif [ "${ROOT_MANAGER:-none}" = "resukisu" ]; then
+if [ "${ROOT_MANAGER:-none}" = "resukisu" ]; then
   assert_cfg CONFIG_KSU || rc=1
   if [ "${HOOK_TYPE:-manual}" = "susfs" ]; then
     # SuSFS inline hook: KSU_SUSFS is a KernelSU-side choice (mutually

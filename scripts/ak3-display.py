@@ -8,11 +8,10 @@ env: ROOT_MANAGER HOOK_TYPE
 
 Display: one left-aligned line —
     <codename>  <manager>  <hook> | <feature>  <feature> ...
-hook names: BakaSU -> AUTO HOOK / SUSFS INLINE HOOK / MANUAL HOOK;
-XXKSU -> SUSFS INLINE HOOK / SYSCALL TABLE HOOK / BRANCH LINK HOOK.
+hook names: BakaSU -> AUTO HOOK / SUSFS INLINE HOOK / MANUAL HOOK.
 features follow BBG > DROIDSPACE > SDCARDFS; absent ones are
 omitted. Package name: <codename>_<manager>_<hook>[_<feature>...].zip,
-hook token SUSFS / AUTO / MANUAL / SYSCALL_TABLE / BRANCH_LINK.
+hook token SUSFS / AUTO / MANUAL.
 
 Writes inside <ak3-dir>:
   banner        the line; AnyKernel3 prints this file line by line
@@ -57,12 +56,6 @@ if rm == 'resukisu':
     hook, token = {'auto': ('AUTO HOOK', 'AUTO'),
                    'susfs': ('SUSFS INLINE HOOK', 'SUSFS'),
                    }.get(ht, ('MANUAL HOOK', 'MANUAL'))
-elif rm == 'xxksu':
-    manager = 'XXKSU'
-    hook, token = {'susfs': ('SUSFS INLINE HOOK', 'SUSFS'),
-                   'syscall_table': ('SYSCALL TABLE HOOK', 'SYSCALL_TABLE'),
-                   'branch_link': ('BRANCH LINK HOOK', 'BRANCH_LINK'),
-                   }.get(ht, ('HOOK', ''))
 else:
     manager = 'STOCK'
     hook = token = ''
