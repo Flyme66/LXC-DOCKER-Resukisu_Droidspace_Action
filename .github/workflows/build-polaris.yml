@@ -94,7 +94,21 @@ jobs:
 
       - name: Apply BakaSU manual-hook patches
         if: env.ROOT_MANAGER == 'resukisu' && env.HOOK_TYPE != 'auto' && env.HOOK_TYPE != 'susfs'
-        run: bash "$GITHUB_WORKSPACE/scripts/apply-resukisu-manual-hooks.sh" "$KROOT" "$GITHUB_WORKSPACE/patches/resukisu/4.14" "$GITHUB_WORKSPACE/patches/resukisu/4.14"
+        run: |
+          # File-level list: shared shapes (stat/exec/reboot/input) live in
+          # resukisu/4.9 as the single copy; 4.19-local files cover the
+          # 4.19-shaped parts (faccessat wrapper, __sys setresuid, ksys_read
+          # wrapper).
+          PATCHES="$GITHUB_WORKSPACE/patches/resukisu/4.19/0001-fs-stat-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0003-fs-open-ksu-manual-hook.patch"
+          PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
+          if [ "$HOOK_EXTRA" = "manual" ]; then
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0010-input-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0011-setuid-manual-hook.patch"
+            PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0012-sysread-manual-hook.patch"
+          fi
+          bash "$GITHUB_WORKSPACE/scripts/apply-patches.sh" "$KROOT" $PATCHES
 
       - name: Integrate BakaSU (kernel/setup.sh + config fragment)
         if: env.ROOT_MANAGER == 'resukisu'

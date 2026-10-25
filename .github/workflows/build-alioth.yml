@@ -128,7 +128,7 @@ jobs:
           # in resukisu/4.9 as the single copy; 4.19-local files cover the
           # 4.19-shaped parts (faccessat wrapper, __sys setresuid, ksys_read
           # wrapper).
-          PATCHES="$GITHUB_WORKSPACE/patches/resukisu/4.9/0001-fs-stat-ksu-manual-hook.patch"
+          PATCHES="$GITHUB_WORKSPACE/patches/resukisu/4.19/0001-fs-stat-ksu-manual-hook.patch"
           PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0002-fs-exec-ksu-manual-hook.patch"
           PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.19/0003-fs-open-ksu-manual-hook.patch"
           PATCHES="$PATCHES $GITHUB_WORKSPACE/patches/resukisu/4.9/0004-kernel-reboot-ksu-manual-hook.patch"
